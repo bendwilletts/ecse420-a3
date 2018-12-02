@@ -74,9 +74,10 @@ public class Question3 {
 		t[1] = new Thread(enqer1);
 		t[2] = new Thread(deqer);
 		executor.execute(t[0]);
-		executor.execute(t[1]);
+		//executor.execute(t[1]);
 		executor.execute(t[2]);
 		
+		executor.shutdown();
 	}
 	
 	/*
@@ -90,14 +91,16 @@ public class Question3 {
 		
 		ReentrantLock enqLock, deqLock;
 		Condition notEmpty, notFull;
-		int enqSize;
-		int deqSize;
+		AtomicInteger size;
 		int head;
 		int tail;
 		int capacity;
 		Object[] queue;
 		
 		public BoundedQueue(int capacity){
+			
+			this.size = new AtomicInteger();
+			this.size.set(0);
 			
 			this.enqLock = new ReentrantLock();
 			this.notFull = enqLock.newCondition();
@@ -107,8 +110,6 @@ public class Question3 {
 			this.capacity = capacity;
 			this.head = 0;
 			this.tail = 0;
-			this.enqSize = 0;
-			this.deqSize = 0;
 			this.queue = new Object[this.capacity];
 		}
 		
@@ -122,16 +123,13 @@ public class Question3 {
 			enqLock.lock();
 			
 			try{
-				while (enqSize >= capacity){	// Update size parameters and wait for signal
-					deqLock.lock();
-					enqSize += deqSize;
-					deqSize = 0;
-					deqLock.unlock();
+				while (size.get() >= capacity){	// Update size parameters and wait for signal
+					System.out.println("Waiting to enq");
 					notFull.await();
 				}
 				queue[(tail++ % capacity)] = x;	// Add object to queue and update tail index
 				tail = tail % capacity;
-				if(enqSize++ == 0)
+				if(size.getAndIncrement() == 0)
 					wakeupDequeuers = true;		// If size was 0, set signal flag
 			} finally {
 				enqLock.unlock();
@@ -158,14 +156,14 @@ public class Question3 {
 			deqLock.lock();
 			
 			try{
-				while (enqSize == 0){
+				while (size.get() == 0){
+					System.out.println("Waiting to deq");
 					notEmpty.await();	// wait for signal if queue is empty
 				}
 				obj = queue[head];		// Get object at head
 				queue[head++ % capacity] = null;	// Update head
 				head = head % capacity;				// Wrap around
-				deqSize--;							// Update size
-				if (enqSize == capacity)
+				if (size.getAndDecrement() == capacity)
 					wakeupEnqueuers = true;			// Set signal flag if queue was full
 			} finally {
 				deqLock.unlock();
@@ -208,8 +206,7 @@ public class Question3 {
 	public static class LFBoundedQueue {
 		
 		Condition notEmpty, notFull;
-		int enqSize;
-		int deqSize;
+		AtomicInteger size;
 		AtomicInteger head;	// Head index made atomic to enable lock-free implementation
 		AtomicInteger tail; // Tail index made atomic to enable lock-free implementation
 		int capacity;
@@ -223,13 +220,13 @@ public class Question3 {
 			
 			this.capacity = capacity;
 			
+			this.size = new AtomicInteger();
+			this.size.set(0);
 			this.head = new AtomicInteger();
 			this.head.set(0);
 			this.tail = new AtomicInteger();
 			this.tail.set(0);
 			
-			this.enqSize = 0;
-			this.deqSize = 0;
 			this.queue = new Object[this.capacity];
 		}
 		
@@ -241,15 +238,13 @@ public class Question3 {
 		public void enq(Object x) throws InterruptedException{
 			boolean wakeupDequeuers = false;
 
-			while (enqSize == capacity){	// Update size variables and wait if queue is full
-				enqSize += deqSize;
-				deqSize = 0;		
+			while (size.get() >= capacity){	// Update size variables and wait if queue is full	
 				notFull.await();
 			}
 
 			queue[tail.getAndUpdate(old -> (old+1 % capacity))] = x;	// Add element to queue and update tail index
 
-			if(enqSize++ == 0)
+			if(size.getAndIncrement() == 0)				// Update Size
 				wakeupDequeuers = true;
 			
 			if (wakeupDequeuers) {
@@ -267,17 +262,16 @@ public class Question3 {
 			int prevHead = 0;
 			boolean wakeupEnqueuers = false;
 			
-			while (enqSize == 0){
+			while (size.get() == 0){
 				notEmpty.await();		// Wait if queue is empty
 			}
 			
 			obj = queue[(prevHead = head.getAndUpdate(old -> (old+1 % capacity)))];	// get object at head and update head
 			// Non Atomic
-			queue[prevHead] = null;			// Set previous head to null
-											// This sequence is non-atomic which poses a problem in this lock-free implementation.
-											// The position we are setting to null could have been altered from another thread.
-			deqSize--;						// Update size
-			if (enqSize == capacity)
+			queue[prevHead] = null;						// Set previous head to null
+														// This sequence is non-atomic which poses a problem in this lock-free implementation.
+														// The position we are setting to null could have been altered from another thread.						
+			if (size.getAndDecrement() == capacity)		// Update size
 				wakeupEnqueuers = true;
 
 			if (wakeupEnqueuers){
