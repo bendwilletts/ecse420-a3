@@ -22,6 +22,10 @@ public class Question3 {
 		Runnable[] t = new Runnable[threadNum];
 		BoundedQueue q = new BoundedQueue(capacity);
 		
+		/*
+		 * Runnable class for testing.
+		 * Enqueues random characters from its data string
+		 */
 		class Enqueuer implements Runnable {
 			String data;
 	        
@@ -46,6 +50,10 @@ public class Question3 {
 	        }
 	    }
 		
+		/*
+		 * Runnabel class for testing
+		 * Dequeues a character from the queue
+		 */
 		class Dequeuer implements Runnable {
 	        
 	        @Override
@@ -61,7 +69,8 @@ public class Question3 {
 	        	}
 	        }
 	    }
-		   
+		
+		// Instantiate test runnables
 		Enqueuer enqer = new Enqueuer("botacelivermiceli");
 		Enqueuer enqer1 = new Enqueuer("phalentropur");
 		Dequeuer deqer = new Dequeuer();
@@ -70,6 +79,7 @@ public class Question3 {
 	    System.out.println("# OF THREADS = " + threadNum);
 	    ExecutorService executor = Executors.newFixedThreadPool(threadNum);
 	    
+	    // Execute threads
 		t[0] = new Thread(enqer);
 		t[1] = new Thread(enqer1);
 		t[2] = new Thread(deqer);
