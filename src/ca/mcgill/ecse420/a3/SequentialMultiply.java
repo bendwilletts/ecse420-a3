@@ -2,17 +2,18 @@ package ca.mcgill.ecse420.a3;
 
 public class SequentialMultiply {
   
-  public static double[] sequentialMultiply(double[][] matrix, double[] vector, int matrix_size) {
-    double[] result = new double[matrix_size];
-    for (int i=0;i<matrix_size;i++){
-        for (int j=0;j<matrix_size;j++) {
-            result[i] = 0;
-            for (int k = 0; k < matrix_size; k++) {
-                result[i] += matrix[i][k] * vector[k];
+  public static double[] seqMult(double[][] m, double[] v, int size) {
+    System.out.println("Starting Sequential Multiplication...");
+    double[] r = new double[size];
+    for (int i=0;i<size;i++){
+        for (int j=0;j<size;j++) {
+            r[i] = 0;
+            for (int k = 0; k < size; k++) {
+                r[i] += m[i][k] * v[k];
             }
         }
     }
-    return result;
+    return r;
   }
   
 }
