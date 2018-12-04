@@ -21,6 +21,7 @@ public class Question3 {
 		int threadNum = 3;
 		Runnable[] t = new Runnable[threadNum];
 		BoundedQueue q = new BoundedQueue(capacity);
+		//LFBoundedQueue q = new LFBoundedQueue(capacity);
 		
 		/*
 		 * Runnable class for testing.
@@ -246,20 +247,15 @@ public class Question3 {
 		 * @throws InterruptedException
 		 */
 		public void enq(Object x) throws InterruptedException{
-			boolean wakeupDequeuers = false;
 
-			while (size.get() >= capacity){	// Update size variables and wait if queue is full	
-				notFull.await();
-			}
+			while (size.get() >= capacity){
+				Thread.sleep(1);		// Wait if queue is full [with backoff]
+			}	
 
-			queue[tail.getAndUpdate(old -> (old+1 % capacity))] = x;	// Add element to queue and update tail index
+			queue[tail.getAndUpdate(old -> ((old+1) % capacity))] = x;	// Add element to queue and update tail index
 
-			if(size.getAndIncrement() == 0)				// Update Size
-				wakeupDequeuers = true;
+			size.getAndIncrement();			// Update Size
 			
-			if (wakeupDequeuers) {
-				notEmpty.signalAll();		// Signal threads if queue was empty
-			}
 		}
 		
 		/**
@@ -270,26 +266,31 @@ public class Question3 {
 		public Object deq() throws InterruptedException{
 			Object obj;
 			int prevHead = 0;
-			boolean wakeupEnqueuers = false;
 			
 			while (size.get() == 0){
-				notEmpty.await();		// Wait if queue is empty
+				Thread.sleep(1);		// Wait if queue is empty [with backoff]
 			}
 			
-			obj = queue[(prevHead = head.getAndUpdate(old -> (old+1 % capacity)))];	// get object at head and update head
+			obj = queue[(prevHead = head.getAndUpdate(old -> ((old+1) % capacity)))];	// get object at head and update head
 			// Non Atomic
 			queue[prevHead] = null;						// Set previous head to null
 														// This sequence is non-atomic which poses a problem in this lock-free implementation.
-														// The position we are setting to null could have been altered from another thread.						
-			if (size.getAndDecrement() == capacity)		// Update size
-				wakeupEnqueuers = true;
-
-			if (wakeupEnqueuers){
-				notFull.signalAll();		// Signal threads if queue was full
-			}
-			
+														// The position we are setting to null could have been altered from another thread.	
+			size.getAndDecrement();
 			return obj;
 		}
+		
+		/**
+		 * Prints out contents of queue on one line
+		 */
+		public void print(){
+			String s = "HEAD: " + head + " | " + "TAIL: " + tail + " | ";
+			for (int i=0; i<capacity; i++){
+				s += queue[i] + " , ";
+			}
+			System.out.println(s);
+		}
+
 
 	}
 }
