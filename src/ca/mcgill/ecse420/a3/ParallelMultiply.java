@@ -9,7 +9,7 @@ import java.util.concurrent.FutureTask;
 
 public class ParallelMultiply {
 	
-    static final int NUM_THREADS = 16; //No. of Threads used
+    static final int NUM_THREADS = 8; //No. of Threads used
 	static int min_size; // Minimum subset size that determines when to start computing multiplication
 	static ExecutorService executor = Executors.newFixedThreadPool(NUM_THREADS); //Executor with pool of threads
 	
@@ -65,7 +65,8 @@ public class ParallelMultiply {
 	   public static double[] parMult(double[][] m, double[] v, int size) {
 	        System.out.println("Starting Parallel Multiplication...");
 	        System.out.println("No. of Threads: " + NUM_THREADS);
-	        min_size = size/NUM_THREADS;
+	        min_size = size / (int)(Math.log(NUM_THREADS)/Math.log(4)*2);
+
 	        double[] r = new double[size];
 	        Multiply task = new Multiply(m, v, r, 0, 0, 0, 0, size);
 	        Future fval = executor.submit(task); //Submit Multiply task to compute

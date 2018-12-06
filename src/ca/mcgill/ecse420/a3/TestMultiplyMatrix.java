@@ -2,7 +2,7 @@ package ca.mcgill.ecse420.a3;
 
 public class TestMultiplyMatrix {
 
-  private static final int MSIZE = 2000;
+  private static final int MSIZE = 8000;
 
   // Create a random matrix given dimensions
   private static double[][] initRandomMatrix(int rows, int cols) {
@@ -55,5 +55,6 @@ public class TestMultiplyMatrix {
     //Display Time Result
     System.out.println("Sequential Runtime (seconds): " +  durationS);
     System.out.println("Parallel Runtime (seconds): " + durationP);
+    System.out.println("Parallel method is " + durationS/durationP + " times faster than Sequential");
   }
 }
